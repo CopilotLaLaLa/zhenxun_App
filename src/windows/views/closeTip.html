@@ -15,5 +15,16 @@
         <button id="minSys">最小化至系统托盘</button>
     </div>
   </body>
-  <script type="module" src="/src/closeTip.js"></script>
+  <script >
+      let cancelBtn = document.getElementById('cancel')
+      let okBtn = document.getElementById('ok')
+
+      cancelBtn.addEventListener('click', () => {
+        window.api.cancleCloseTipWindow()
+      })
+
+      okBtn.addEventListener('click', () => {
+        window.api.closeTipWindow()
+      })
+  </script>
 </html>

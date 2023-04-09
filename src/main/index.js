@@ -1,191 +1,141 @@
-import { app, shell, BrowserWindow, ipcMain, Menu, Tray } from 'electron'
-import { join } from 'path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.jpg?asset'
+'use strict'
+const { app, ipcMain, BrowserWindow } = require('electron')
+const AppConfig = require('./configuration')
 
-app.disableHardwareAcceleration()
+const DialogWindow = require('../windows/controllers/dialog')
+const MainWindow = require('../windows/controllers/mainW')
+const SettingsWindow = require('../windows/controllers/settings')
+const AppTray = require('../windows/controllers/app_tray')
 
-// const axios = require('axios')
-
-export function createCloseTipWindow(mainWindow) {
-  // Create the browser window.
-  const CloseTipWindow = new BrowserWindow({
-    parent: mainWindow,
-    width: 500,
-    height: 300,
-    show: false,
-    frame: false,
-    resizable: false,
-    title: '真寻的小房间',
-    icon,
-    modal: true,
-    // ...( true == 1 ? { icon } : {}),
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      nodeIntegration: false,
-      contextIsolation: true
-    }
-  })
-
-  CloseTipWindow.on('ready-to-show', () => {
-    CloseTipWindow.show()
-  })
-
-  CloseTipWindow.on('closeWindow', () => {
-    CloseTipWindow.close()
-  })
-
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    // CloseTipWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
-    CloseTipWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/closeTip.html`)
-  } else {
-    CloseTipWindow.loadFile(join(__dirname, './closeTip.html'))
+class ElectronicWeChat {
+  constructor() {
+    this.loginWindow = null
+    this.mainWindow = null
+    this.settingsWindow = null
+    this.dialogWindow = null
+    this.tray = null
   }
-}
 
-function createWindow() {
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    width: 1600,
-    height: 900,
-    show: false,
-    frame: false,
-    resizable: false,
-    title: '真寻的小房间',
-    icon,
-    // ...( true == 1 ? { icon } : {}),
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      nodeIntegration: false,
-      contextIsolation: true
+  init() {
+    if (this.checkInstance()) {
+      this.initApp()
+      this.initIPC()
+    } else {
+      app.quit()
     }
-  })
+  }
+  checkInstance() {
+    //如果当前进程是应用程序的主要实例，则此方法返回true
+    const gotTheLock = app.requestSingleInstanceLock()
 
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
-  })
-
-  ipcMain.on('closeWindow', () => {
-    createCloseTipWindow(mainWindow)
-    // mainWindow.close()
-  })
-  ipcMain.on('minimizeWindow', () => {
-    if (!mainWindow.isMinimized()) {
-      mainWindow.minimize()
+    if (gotTheLock) {
+      app.on('second-instance', () => {
+        if (this.dialogWindow && this.dialogWindow.isShown) {
+          this.dialogWindow.show()
+        }
+        if (this.loginWindow) {
+          this.loginWindow.show()
+        }
+        if (this.mainWindow) {
+          this.mainWindow.show()
+        }
+        if (this.settingsWindow && this.settingsWindow.isShown) {
+          this.settingsWindow.show()
+        }
+      })
     }
-  })
+    return !gotTheLock
+  }
+  initApp() {
+    app.on('ready', () => {
+      this.createMainWindow()
+      this.createTray()
 
-  ipcMain.on('cancleCloseTipWindow', () => {
-    BrowserWindow.getFocusedWindow().close()
-  })
-
-  ipcMain.on('closeTipWindow', () => {
-    mainWindow.close()
-  })
-
-  ipcMain.on('minTipWindow', () => {
-    mainWindow.hide()
-  })
-
-  mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
-    return { action: 'deny' }
-  })
-
-  const tray = new Tray(icon)
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: 'Show',
-      click: function () {
-        mainWindow.show()
+      if (!AppConfig.readSettings('language')) {
+        AppConfig.saveSettings('language', 'zh-CN')
       }
-    },
-    {
-      label: 'Hide',
-      click: function () {
-        mainWindow.hide()
-      }
-    },
-    {
-      label: 'Exit',
-      click: function () {
-        mainWindow.close()
-      }
-    }
-  ])
-  tray.setToolTip('真寻的小房间')
-  tray.setContextMenu(contextMenu)
-  tray.on('click', () => {
-    mainWindow.isVisible() ? mainWindow.hide() : mainWindow.show()
-  })
-  tray.on('right-click', () => {
-    tray.popUpContextMenu(contextMenu)
-  })
+    })
 
-  // const formData = new URLSearchParams()
-  // formData.append('username', 'admin')
-  // formData.append('password', 'password')
-  // const params = {
-  //   username: 'admin',
-  //   password: 'password'
+    app.on('activate', () => {
+      if (this.loginWindow == null) {
+        this.createMainWindow()
+      } else {
+        this.loginWindow.show()
+      }
+    })
+  }
+
+  initIPC() {
+    ipcMain.on('open-login-window', () => {
+      if (this.loginWindow) {
+        this.loginWindow.show()
+      } else {
+        this.createLoginWindow()
+        this.loginWindow.show()
+      }
+    })
+    ipcMain.on('close-login-window', () => {
+      this.loginWindow.close()
+      this.loginWindow = null
+    })
+    ipcMain.on('open-main-window', () => {
+      if (this.mainWindow) {
+        this.mainWindow.show()
+      } else {
+        this.createMainWindow()
+        this.mainWindow.show()
+      }
+    })
+    ipcMain.on('close-main-window', () => {
+      this.mainWindow.close()
+      this.mainWindow = null
+    })
+    ipcMain.on('open-dialog-window', () => {
+      if (this.dialogWindow) {
+        this.dialogWindow.show()
+      } else {
+        this.createDialogWindow(BrowserWindow.getFocusedWindow())
+        this.dialogWindow.show()
+      }
+    })
+    ipcMain.on('close-dialog-window', () => {
+      this.dialogWindow.close()
+      this.dialogWindow = null
+    })
+    ipcMain.on('open-settings-window', () => {
+      if (this.settingsWindow) {
+        this.settingsWindow.show()
+      } else {
+        this.createSettingsWindow()
+        this.settingsWindow.show()
+      }
+    })
+    ipcMain.on('close-settings-window', () => {
+      this.settingsWindow.close()
+      this.settingsWindow = null
+    })
+  }
+
+  createTray() {
+    this.tray = new AppTray(this.splashWindow, this.wechatWindow)
+  }
+
+  // creatLoginWindow() {
+  //   this.loginWindow = new LoginWindow()
   // }
 
-  // axios
-  //   .post('http://150.158.16.59:8080/zhenxun/api/login', formData, {
-  //     headers: {
-  //       'Content-Type': 'application/x-www-form-urlencoded'
-  //     }
-  //   })
-  //   .then((res) => {
-  //     console.log(res.data)
-  //   })
-  //   .catch((err) => {
-  //     console.log(err)
-  //   })
+  createDialogWindow(fatherWindow) {
+    this.dialogWindow = new DialogWindow(fatherWindow)
+    this.dialogWindow.show()
+  }
 
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
-    // mainWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/api`)
-  } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+  createMainWindow() {
+    this.mainWindow = new MainWindow()
+  }
+
+  createSettingsWindow() {
+    this.settingsWindow = new SettingsWindow()
   }
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
-  // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
-
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
-  })
-
-  createWindow()
-
-  app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
-})
-
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
-})
-
-// In this file you can include the rest of your app"s specific main process
-// code. You can also put them in separate files and require them here.
+new ElectronicWeChat().init()

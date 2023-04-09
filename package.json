@@ -25,6 +25,8 @@
     "electron-icon-builder": "^2.0.1",
     "electron-updater": "^5.3.0",
     "element-plus": "^2.3.2",
+    "glob": "^9.3.4",
+    "nconf": "^0.12.0",
     "vue-router": "^4.1.6"
   },
   "devDependencies": {

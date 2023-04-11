@@ -1,11 +1,13 @@
 'use strict'
 const { app, ipcMain, BrowserWindow } = require('electron')
+process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
 const AppConfig = require('./configuration')
 
-const DialogWindow = require('../windows/controllers/dialog')
-const MainWindow = require('../windows/controllers/mainW')
-const SettingsWindow = require('../windows/controllers/settings')
-const AppTray = require('../windows/controllers/app_tray')
+const DialogWindow = require('./controllers/dialog')
+const MainWindow = require('./controllers/mainW')
+const SettingsWindow = require('./controllers/settings')
+const AppTray = require('./controllers/app_tray')
+
 
 class ElectronicWeChat {
   constructor() {
@@ -44,12 +46,12 @@ class ElectronicWeChat {
         }
       })
     }
-    return !gotTheLock
+    return gotTheLock
   }
   initApp() {
     app.on('ready', () => {
       this.createMainWindow()
-      this.createTray()
+      this.createTray(this.mainWindow)
 
       if (!AppConfig.readSettings('language')) {
         AppConfig.saveSettings('language', 'zh-CN')
@@ -57,15 +59,51 @@ class ElectronicWeChat {
     })
 
     app.on('activate', () => {
-      if (this.loginWindow == null) {
+      if (this.mainWindow == null) {
         this.createMainWindow()
       } else {
-        this.loginWindow.show()
+        console.log('activate')
+        this.mainWindow.show()
+      }
+    })
+
+    app.on('window-all-closed', () => {
+      if (process.platform !== 'darwin') {
+        app.quit()
       }
     })
   }
 
   initIPC() {
+    ipcMain.on('open-main-window', () => {
+      if (this.mainWindow) {
+        this.mainWindow.show()
+      } else {
+        this.createMainWindow()
+        this.mainWindow.show()
+      }
+    })
+    ipcMain.on('hide-main-window', () => {
+      this.mainWindow.hide()
+    })
+    ipcMain.on('minimize-main-window', () => {
+      this.mainWindow.minimize()
+    })
+    ipcMain.on('close-main-window', () => {
+      this.createDialogWindow(this.mainWindow.mainWindow, this.tray)
+    })
+    ipcMain.on('ok-dialog-window', (event, message) => {
+      if (message == 'cmd' && this.mainWindow != null) {
+        this.mainWindow.close()
+        this.mainWindow = null
+      }
+      this.dialogWindow.close()
+      this.dialogWindow = null
+    })
+    ipcMain.on('cancel-dialog-window', () => {
+      this.dialogWindow.close()
+      this.dialogWindow = null
+    })
     ipcMain.on('open-login-window', () => {
       if (this.loginWindow) {
         this.loginWindow.show()
@@ -77,30 +115,6 @@ class ElectronicWeChat {
     ipcMain.on('close-login-window', () => {
       this.loginWindow.close()
       this.loginWindow = null
-    })
-    ipcMain.on('open-main-window', () => {
-      if (this.mainWindow) {
-        this.mainWindow.show()
-      } else {
-        this.createMainWindow()
-        this.mainWindow.show()
-      }
-    })
-    ipcMain.on('close-main-window', () => {
-      this.mainWindow.close()
-      this.mainWindow = null
-    })
-    ipcMain.on('open-dialog-window', () => {
-      if (this.dialogWindow) {
-        this.dialogWindow.show()
-      } else {
-        this.createDialogWindow(BrowserWindow.getFocusedWindow())
-        this.dialogWindow.show()
-      }
-    })
-    ipcMain.on('close-dialog-window', () => {
-      this.dialogWindow.close()
-      this.dialogWindow = null
     })
     ipcMain.on('open-settings-window', () => {
       if (this.settingsWindow) {
@@ -116,17 +130,12 @@ class ElectronicWeChat {
     })
   }
 
-  createTray() {
-    this.tray = new AppTray(this.splashWindow, this.wechatWindow)
+  createTray(mainWindow) {
+    this.tray = new AppTray(mainWindow)
   }
 
-  // creatLoginWindow() {
-  //   this.loginWindow = new LoginWindow()
-  // }
-
-  createDialogWindow(fatherWindow) {
-    this.dialogWindow = new DialogWindow(fatherWindow)
-    this.dialogWindow.show()
+  createDialogWindow(fatherWindow, tray) {
+    this.dialogWindow = new DialogWindow(fatherWindow, tray)
   }
 
   createMainWindow() {

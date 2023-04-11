@@ -1,26 +1,9 @@
 'use strict'
-
-const { ipcRenderer, contextBridge, webFrame } = require('electron')
-const MenuHandler = require('../handlers/menu')
-const Common = require('../main/common')
-
+const { ipcRenderer, contextBridge } = require('electron')
 class Injector {
   init() {
-    if (Common.DEBUG_MODE) {
-      Injector.lock(window, 'console', window.console)
-    }
-    // eslint-disable-next-line prettier/prettier
-    this.initInjectBundle();
-    this.initAngularInjection()
-    this.lastUser = null
     this.initIPC()
-    webFrame.setZoomLevelLimits(1, 1)
-
-    new MenuHandler().create()
-  }
-
-  initInjectBundle() {
-    MenuHandler.create()
+    this.initAPI()
   }
 
   initIPC() {
@@ -40,9 +23,14 @@ class Injector {
     if (process.contextIsolated) {
       try {
         contextBridge.exposeInMainWorld('api', api)
-        contextBridge.exposeInMainWorld('myAPI', {
+        contextBridge.exposeInMainWorld('mainWindow', {
           closeWindow: () => ipcRenderer.send('close-main-window'),
-          minimizeWindow: () => ipcRenderer.send('minimizeWindow')
+          minimizeWindow: () => ipcRenderer.send('minimize-main-window'),
+          hideWindow: () => ipcRenderer.send('hide-main-window')
+        })
+        contextBridge.exposeInMainWorld('dialogWindow', {
+          cancelClick: () => ipcRenderer.send('cancel-dialog-window'),
+          okClick: (message) => ipcRenderer.send('ok-dialog-window', message)
         })
       } catch (error) {
         console.error(error)

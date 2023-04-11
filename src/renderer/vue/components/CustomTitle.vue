@@ -1,9 +1,9 @@
 <script setup>
 const minWin = () => {
-  window.myAPI.minimizeWindow()
+  window.mainWindow.minimizeWindow()
 }
 const cloWin = () => {
-  window.myAPI.closeWindow()
+  window.mainWindow.closeWindow()
 }
 </script>
 

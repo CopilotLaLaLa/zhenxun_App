@@ -4,17 +4,17 @@ const path = require('path')
 const { BrowserWindow } = require('electron')
 const electronLocalShortcut = require('electron-localshortcut')
 
-const AppConfig = require('../../main/configuration')
+const AppConfig = require('../configuration')
 
 const lan = AppConfig.readSettings('language')
 
-import icon from '../../resources/icon.jpg?asset'
+import icon from '../../../resources/icon.png?asset'
 
 let Common
 if (lan === 'zh-CN') {
-  Common = require('../../main/common_cn')
+  Common = require('../../inject/config/common_cn')
 } else {
-  Common = require('../../main/common')
+  Common = require('../../inject/config/common')
 }
 
 class SettingsWindow {

@@ -6,9 +6,9 @@ Common.WINDOW_SIZE = {
   width: 1600,
   height: 900
 }
-Common.WINDOW_SIZE_LOGIN = {
-  width: 380,
-  height: 540
+Common.WINDOW_SIZE_DIALOG = {
+  width: 500,
+  height: 300
 }
 Common.WINDOW_SIZE_LOADING = {
   width: 380,
@@ -18,8 +18,6 @@ Common.WINDOW_SIZE_SETTINGS = {
   width: 800,
   height: 600
 }
-
-Common.WEB_WECHAT = 'https://wx.qq.com/?lang=zh_CN'
 
 Common.UPDATE_ERROR_ELECTRON =
   'Failed to get the local version. If you are using debug mode(by `npm start`), this error would happen. Use packed app instead or manually check for updates.\n\n' +
@@ -45,6 +43,12 @@ Common.MENTION_MENU_HINT_TEXT = '选择回复的人:'
 Common.MESSAGE_PREVENT_RECALL = '阻止了一次撤回'
 
 Common.EMOJI_MAXIUM_SIZE = 120
+
+Common.TRAY_MENU = {
+  show: '显示',
+  hide: '隐藏',
+  exit: '退出'
+}
 
 Common.MENU = {
   about: '关于 Electronic Wechat',
@@ -75,5 +79,7 @@ Common.MENU = {
   feedback: '联系我们',
   checkRelease: '检查更新'
 }
+
+Common.BUTTON_COLOR = 'red'
 
 module.exports = Common

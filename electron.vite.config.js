@@ -10,9 +10,9 @@ export default defineConfig({
       rollupOptions: {
         input: Object.fromEntries(
           glob
-            .sync('src/main/*.js')
+            .sync('src/main/**/*.js')
             .map((file) => [
-              relative('./src/main', file.slice(0, file.length - extname(file).length)),
+              relative('src/main', file.slice(0, file.length - extname(file).length)),
               file
             ])
         )
@@ -22,12 +22,16 @@ export default defineConfig({
   },
   preload: {
     build: {
+      outDir: 'out/inject',
       rollupOptions: {
-        input: {
-          // closeTip: resolve(__dirname, 'src/renderer/windowComponents/closeTip/index.js'),
-          // closeTip: resolve(__dirname, 'src/renderer/windowComponents/closeTip/index.js'),
-          index: resolve(__dirname, './src/inject/preload.js')
-        }
+        input: Object.fromEntries(
+          glob
+            .sync('src/inject/**/*.js')
+            .map((file) => [
+              relative('src/inject', file.slice(0, file.length - extname(file).length)),
+              file
+            ])
+        )
       }
     },
     plugins: [externalizeDepsPlugin()]
@@ -40,10 +44,14 @@ export default defineConfig({
     },
     build: {
       rollupOptions: {
-        input: {
-          // closeTip: resolve(__dirname, 'src/renderer/closeTip.html'),
-          index: resolve(__dirname, './src/windows/views/index.html')
-        }
+        input: Object.fromEntries(
+          glob
+            .sync('src/renderer/windows/*.html')
+            .map((file) => [
+              relative('src/renderer/windows', file.slice(0, file.length - extname(file).length)),
+              file
+            ])
+        )
       }
     },
     plugins: [vue()]

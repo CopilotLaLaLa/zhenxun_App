@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data: content:;">
+  </head>
+
+  <body>
+    <div id="tip-box">
+        <button id="ok">确认</button>
+        <button id="cancel">取消</button>
+        <button id="hide">最小化至系统托盘</button>
+    </div>
+  </body>
+  <script >
+      let cancelBtn = document.getElementById('cancel')
+      let okBtn = document.getElementById('ok')
+      let hideBtn = document.getElementById('hide')
+
+      cancelBtn.addEventListener('click', () => {
+        window.dialogWindow.cancelClick()
+      })
+
+      okBtn.addEventListener('click', () => {
+        window.dialogWindow.okClick('cmd')
+      })
+
+      hideBtn.addEventListener('click', () => {
+        window.dialogWindow.cancelClick()
+        window.mainWindow.hideWindow()
+      })
+  </script>
+</html>

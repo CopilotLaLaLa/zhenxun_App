@@ -1,15 +1,14 @@
 'use strict'
-const { app, ipcMain, BrowserWindow } = require('electron')
+const { app, ipcMain } = require('electron')
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
-const AppConfig = require('./configuration')
+import { readSettings, saveSettings } from './configuration'
 
 const DialogWindow = require('./controllers/dialog')
 const MainWindow = require('./controllers/mainW')
 const SettingsWindow = require('./controllers/settings')
 const AppTray = require('./controllers/app_tray')
 
-
-class ElectronicWeChat {
+class ElectronicMain {
   constructor() {
     this.loginWindow = null
     this.mainWindow = null
@@ -53,8 +52,8 @@ class ElectronicWeChat {
       this.createMainWindow()
       this.createTray(this.mainWindow)
 
-      if (!AppConfig.readSettings('language')) {
-        AppConfig.saveSettings('language', 'zh-CN')
+      if (!readSettings('language')) {
+        saveSettings('language', 'zh-CN')
       }
     })
 
@@ -147,4 +146,4 @@ class ElectronicWeChat {
   }
 }
 
-new ElectronicWeChat().init()
+new ElectronicMain().init()

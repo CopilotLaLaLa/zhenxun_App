@@ -5,9 +5,9 @@ const { BrowserWindow } = require('electron')
 import { is } from '@electron-toolkit/utils'
 
 const CSSInjector = require('../../inject/styles/css')
-const AppConfig = require('../configuration')
+import { readSettings } from '../configuration'
 
-const lan = AppConfig.readSettings('language')
+const lan = readSettings('language')
 
 import icon from '../../../resources/icon.png?asset'
 

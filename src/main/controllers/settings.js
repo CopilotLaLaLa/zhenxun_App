@@ -4,9 +4,9 @@ const path = require('path')
 const { BrowserWindow } = require('electron')
 const electronLocalShortcut = require('electron-localshortcut')
 
-const AppConfig = require('../configuration')
+import { readSettings } from '../configuration'
 
-const lan = AppConfig.readSettings('language')
+const lan = readSettings('language')
 
 import icon from '../../../resources/icon.png?asset'
 

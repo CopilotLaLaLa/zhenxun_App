@@ -4,9 +4,9 @@ import { BrowserWindow } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import { unregisterAll } from 'electron-localshortcut'
 import icon from '../../../resources/icon.png?asset'
-const AppConfig = require('../configuration')
+import { readSettings } from '../configuration'
 
-const lan = AppConfig.readSettings('language')
+const lan = readSettings('language')
 
 let Common
 if (lan === 'zh-CN') {
@@ -29,7 +29,7 @@ class mainWindow {
       title: Common.TITLE,
       width: Common.WINDOW_SIZE.width,
       height: Common.WINDOW_SIZE.height,
-      resizable: true,
+      resizable: false,
       show: false,
       frame: false,
       icon,

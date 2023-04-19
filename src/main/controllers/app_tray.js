@@ -1,9 +1,8 @@
 'use strict'
 const { Menu, Tray } = require('electron')
+import { readSettings } from '../configuration'
 
-const AppConfig = require('../configuration')
-
-const lan = AppConfig.readSettings('language')
+const lan = readSettings('language')
 
 import icon from '../../../resources/icon.jpg?asset'
 
